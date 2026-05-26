@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.28)
+
+# Configure this to change the Project's name
+set(GAME_NAME "Twinewood")
+
+project(${GAME_NAME} LANGUAGES CXX)
+
+# set for C++ 2017.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# pull in WinderEngine as a static library
+add_subdirectory(engine)
+
+# collect the project's source and header files located under /source.
+file(GLOB_RECURSE SOURCES "source/*.cpp" "source/*.h")
+
+# Automatically reconfigures CMake whenever new files are added to the source folder.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "source")
+
+# Mirror source folders tructure to visual studio filters
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/source PREFIX "source" FILES ${SOURCES})
+
+add_executable(${GAME_NAME} ${SOURCES})
+
+# Set working directory to root
+set_target_properties(${GAME_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${GAME_NAME}>")
+
+# link it against WinderEngine. we get SFML transitively via PUBLIC
+target_link_libraries(${GAME_NAME} PRIVATE WinderEngine)
+
+# the game source + engine source 
+target_include_directories(
+	${GAME_NAME} PRIVATE
+	source
+	engine/source
+)
+
+# copy any engine default assets to build output
+add_custom_command(
+	TARGET ${GAME_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/engine/content
+    $<TARGET_FILE_DIR:${GAME_NAME}>/content
+)
+
+# copy game specific assets to build output
+add_custom_command(
+	TARGET ${GAME_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/content
+    $<TARGET_FILE_DIR:${GAME_NAME}>/content
+)
+
+# compiler warnings just in case
+if(MSVC)
+	target_compile_options(${GAME_NAME} PRIVATE /W4)
+else()
+	target_compile_options(${GAME_NAME} PRIVATE -Wall -Wextra)
+endif()
