@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # pull in WinderEngine as a static library
-add_subdirectory(engine)
+add_subdirectory(WinderEngine/engine)
 
 # collect the project's source and header files located under /source.
 file(GLOB_RECURSE SOURCES "source/*.cpp" "source/*.h")
@@ -40,7 +40,7 @@ target_include_directories(
 add_custom_command(
 	TARGET ${GAME_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/engine/content
+    ${CMAKE_SOURCE_DIR}/WinderEngine/engine/content
     $<TARGET_FILE_DIR:${GAME_NAME}>/content
 )
 
