@@ -1,0 +1,3 @@
+[submodule "WinderEngine"]
+	path = WinderEngine
+	url = https://github.com/Windermed/WinderEngine.git
