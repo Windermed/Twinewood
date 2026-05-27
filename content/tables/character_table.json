@@ -1,0 +1,63 @@
+{
+  "CharacterTable": {
+    "Characters": [
+      {
+        "Character_Test01": {
+          "DisplayName": "Protagonist",
+          "Description": "This is the main protagonist. something something flavor text.",
+          "Level": 1,
+		  "BaseHP": 100,
+		  "BaseMP": 50,
+          "BaseAttack": 10,
+          "BaseDefense": 8,
+		  "SpritePath": "content/textures/player/spr_character_base_overworld.png",
+          "Stats": {
+            "Strength": 12,
+            "Magic": 8,
+            "Vitality": 15,
+            "Agility": 10,
+            "Luck": 9
+          }
+        }
+      },
+      {
+        "Character_Test02": {
+          "DisplayName": "Test Enemy Character 2",
+          "Description": "First Enemy Character. mainly for testing.",
+          "Level": 10,
+		  "BaseHP": 200,
+		  "BaseMP": 20,
+          "BaseAttack": 2,
+          "BaseDefense": 5,
+		  "SpritePath": "content/textures/player/spr_character_base_overworld.png",
+          "Stats": {
+            "Strength": 14,
+            "Magic": 22,
+            "Vitality": 12,
+            "Agility": 11,
+            "Luck": 35
+          }
+        }
+      },
+      {
+        "Character_Test03": {
+          "DisplayName": "Test Character 3",
+          "Description": "Another Enemy Character. This time, this shall be the boss.",
+          "Level": 67,
+		  "BaseHP": 200,
+		  "BaseMP": 85,
+          "BaseAttack": 2,
+          "BaseDefense": 5,
+		  "SpritePath": "content/textures/player/spr_character_base_overworld.png",
+          "Stats": {
+            "Strength": 21,
+            "Magic": 26,
+            "Vitality": 24,
+            "Agility": 11,
+            "Luck": 12
+          }
+        }
+      }
+    ]
+  }
+}

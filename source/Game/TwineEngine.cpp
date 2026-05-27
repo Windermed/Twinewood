@@ -7,6 +7,16 @@ void TwineEngine::Initialize()
 	// set up camera
 	Camera = View(FloatRect({ 0.f, 0.f }, { (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT }));
 
+	// load our character table
+	CharacterEntries = CharacterTable::LoadFromFile("content/tables/character_table.json");
+	for (auto& entry : CharacterEntries)
+	{
+		Message("The following character: " << entry.GetDisplayName() << " Has loaded!" << endl)
+	}
+
+	// initialize the character table screen using the entries.
+	CharTableScreen = new CharacterTableScreen(CharacterEntries);
+
 	// load the test room
 	CurrentRoom = new BaseRoom("content/textures/rooms/first_test_room.png", 6);
 
@@ -87,9 +97,12 @@ void TwineEngine::Update(float DeltaTime)
 
 	if (!CurrentRoom || !GamePlayer) return;
 
+	// dont update if we are on the character table screen.
+	if (CurrentState == TwineGameMode::CharacterTableTest) return;
+	
+
 	if (CurrentState == TwineGameMode::Overworld)
 	{
-
 		// count down probe timer and clear when done.
 		if (Probe.IsActive())
 		{
@@ -97,7 +110,6 @@ void TwineEngine::Update(float DeltaTime)
 			if (ProbeTimer <= 0.f)
 				Probe.Clear();
 		}
-
 
 		// spawn probe this frame if Z was pressed
 		if (bInteractPressed)
@@ -145,11 +157,27 @@ void TwineEngine::Update(float DeltaTime)
 
 	}
 
+	if (CurrentState == TwineGameMode::Battle)
+	{
+		if (CurrentBattle)
+		{
+			CurrentBattle->Update(DeltaTime);
+
+			// if battle is over and the player has won.
+			if (CurrentBattle->IsBattleOver() && CurrentBattle->IsPlayerWon())
+			{
+				// we return to the overworld.
+				delete CurrentBattle;
+				CurrentBattle = nullptr; // reset.
+				CurrentState = TwineGaemMode::Overworld;
+				GamePlayer->SetInputLocked(false);
+			}
+		}
+	}
+
 	// update debug text when our player moves
 	PlayerDebugText.setString("X: " + to_string((int)GamePlayer->GetPosition().x) +
-	"\nY: " + to_string((int)GamePlayer->GetPosition().y)
-	+ "\nMode: " + (CurrentState == TwineGameMode::Battle ? "Battle" : "Overworld"));
-	// line got too long so i had to move them down.
+	"\nY: " + to_string((int)GamePlayer->GetPosition().y) + "\nMode: " + (CurrentState == TwineGameMode::Battle ? "Battle" : "Overworld"));
 
 	// set the camera to our player.
 	Camera.setCenter(GamePlayer->GetPosition());
@@ -158,35 +186,52 @@ void TwineEngine::Update(float DeltaTime)
 
 void TwineEngine::Draw()
 {
-
-	//Engine::Draw();
-
 	Window.clear(Color::Black);
 
-	// apply camera for world rendering
-	Window.setView(Camera);
-
-	if (CurrentRoom) CurrentRoom->Draw(Window);
-	// draw every enemy on screen.
-	for (Enemy* e : Enemies) e->Draw(Window);
-	if (GamePlayer) GamePlayer->Draw(Window);
-
-	if (Probe.IsActive())
+	
+	// draw battle.
+	if (CurrentState == TwineGameMode::Battle)
 	{
-		FloatRect PB = Probe.GetBounds();
-		RectangleShape ProbeRect(PB.size);
-		ProbeRect.setPosition(PB.position);
-		ProbeRect.setFillColor(Color::Yellow);
-		Window.draw(ProbeRect);
+		Window.setView(Window.getDefaultView());
+		if (CurrentBattle) CurrentBattle->Draw(Window);
 	}
 
-	if (bShowCollisionDebug)
+	// only draw world if we are in overworld or battle.
+	if (CurrentState != TwineGameMode::CharacterTableTest)
 	{
-		DrawCollisionDebug();
+		// apply camera for world rendering
+		Window.setView(Camera);
+
+		if (CurrentRoom) CurrentRoom->Draw(Window);
+		// draw every enemy on screen.
+		for (Enemy* e : Enemies) e->Draw(Window);
+		if (GamePlayer) GamePlayer->Draw(Window);
+
+		if (bShowCollisionDebug)
+		{
+			DrawCollisionDebug();
+
+			if (Probe.IsActive())
+			{
+				FloatRect PB = Probe.GetBounds();
+				RectangleShape ProbeRect(PB.size);
+				ProbeRect.setPosition(PB.position);
+				ProbeRect.setFillColor(Color::Yellow);
+				Window.draw(ProbeRect);
+			}
+		}
 	}
 
 	// switch back to default view for HUD
 	Window.setView(Window.getDefaultView());
+
+	if (CurrentState == TwineGameMode::CharacterTableTest)
+	{
+		if (CharTableScreen) CharTableScreen->Draw(Window);
+	}
+
+
+
 	PlayerDebugText.DrawText();
 
 	Window.display();
@@ -199,6 +244,22 @@ void TwineEngine::OnKeyPressed(Keyboard::Key key)
 	{
 		Message("Z pressed, spawning probe!");
 		bInteractPressed = true;
+	}
+
+	// pass all inputs to battle.
+	if (CurrentState == TwineGameMode::Battle)
+	{
+		if (CurrentBattle) CurrentBattle->OnKeyPressed(key);
+		return;
+	}
+
+	// pass all inputs to the character table test room.
+	if (CurrentState == TwineGameMode::CharacterTableTest)
+	{
+		if (CharTableScreen) CharTableScreen->OnKeyPressed(key);
+		if (key == Keyboard::Key::Space)
+			CurrentState = TwineGameMode::Overworld;
+		return;
 	}
 }
 
@@ -258,10 +319,19 @@ void TwineEngine::ResolveEnemyCollision(Enemy* enemy)
 
 void TwineEngine::EnterBattle(Enemy* enemy)
 {
-	//enemy->SetEngaged(true);
-	//CurrentState = TwineGameMode::Battle;
-	//GamePlayer->SetInputLocked(true);
+	enemy->SetEngaged(true);
+	CurrentState = TwineGameMode::Battle;
+	GamePlayer->SetInputLocked(true);
 
-	// TODO: BATTLES.
+	
+	CharacterTable PlayerEntry = CharacterEntries[0];
+
+	// for now, we will only do one enemy.
+	CharacterTable EnemyEntry = CharacterEntries[1];
+
+	// clean up any previous battles if they remain.
+	if (CurrentBattle) { delete CurrentBattle; CurrentBattle = nullptr; }
+
+	CurrentBattle = new BattleSequence(PlayerEntry, EnemyEntry);
 
 }

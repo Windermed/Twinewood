@@ -1,0 +1,18 @@
+{
+  "CharacterTable": {
+    "Characters": [
+      {
+        "Character_Test01": {
+          "DisplayName": "testCharacter",
+		  "Description": "testing testing!!! as they say!"
+        }
+      },
+      {
+        "Character_Test02": {
+          "DisplayName": "testCharacter_2",
+		  "Description": "testing testing2 222!!! as they say!"
+        }
+      }
+    ]
+  }
+}

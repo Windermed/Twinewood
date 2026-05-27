@@ -1,14 +1,18 @@
 #pragma once
+#include "Engine/Engine.h"
 #include "Core/Interactable.h"
 #include "Core/InteractProbe.h"
-#include "Engine/Engine.h"
+#include "Tables/CharacterTable.h"
+#include "UI/CharacterTableScreen.h"
 #include "Rooms/BaseRoom.h"
 #include "Player/Player.h"
 #include "Enemies/Enemy.h"
+#include "Battle/BattleSequence.h"
 #include <vector>
 
 enum class TwineGameMode
 {
+	CharacterTableTest, // temp.
 	Overworld,
 	Battle
 };
@@ -69,7 +73,14 @@ private:
 
 	// enemies.
 	vector<Enemy*> Enemies;
-	TwineGameMode CurrentState = TwineGameMode::Overworld;
+	TwineGameMode CurrentState = TwineGameMode::CharacterTableTest;
+
+	// battle.
+	BattleSequence* CurrentBattle = nullptr;
+
+	// character entries.
+	std::vector<CharacterTable> CharacterEntries;
+	CharacterTableScreen* CharTableScreen = nullptr;
 
 	// interaction
 	InteractProbe Probe;
