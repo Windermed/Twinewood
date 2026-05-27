@@ -33,12 +33,12 @@ target_link_libraries(${GAME_NAME} PRIVATE WinderEngine)
 target_include_directories(
 	${GAME_NAME} PRIVATE
 	source
-	engine/source
+	WinderEngine/engine/source
 )
 
-# copy any engine default assets to build output
+# copy engine default assets to build output
 add_custom_command(
-	TARGET ${GAME_NAME} POST_BUILD
+    TARGET ${GAME_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/WinderEngine/engine/content
     $<TARGET_FILE_DIR:${GAME_NAME}>/content
@@ -46,7 +46,7 @@ add_custom_command(
 
 # copy game specific assets to build output
 add_custom_command(
-	TARGET ${GAME_NAME} POST_BUILD
+    TARGET ${GAME_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/content
     $<TARGET_FILE_DIR:${GAME_NAME}>/content
