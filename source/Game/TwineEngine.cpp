@@ -46,6 +46,41 @@ void TwineEngine::Input()
 	Engine::Input();
 }
 
+void TwineEngine::CheckInteraction()
+{
+	if (!Probe.IsActive()) return;
+
+	for (Interactable* obj : Interactables)
+	{
+		if (!obj->CanInteract()) continue;
+
+		// every interactable is also an object so we should cast to get bounds.
+		Object* interactObj = dynamic_cast<Object*>(obj);
+		if (!interactObj) continue;
+
+		if (Probe.GetBounds().findIntersection(interactObj->GetBounds()))
+		{
+			obj->OnInteract();
+		}
+	}
+
+}
+
+void TwineEngine::DrawProbeDebug()
+{
+	if (!Probe.IsActive()) return;
+
+	FloatRect PB = Probe.GetBounds();
+	RectangleShape ProbeRect(PB.size);
+
+	ProbeRect.setPosition(PB.position);
+	ProbeRect.setFillColor(Color(255, 255, 0, 60));
+	ProbeRect.setOutlineColor(Color::Yellow);
+	ProbeRect.setOutlineThickness(2.f);
+
+	Window.draw(ProbeRect);
+}
+
 void TwineEngine::Update(float DeltaTime)
 {
 	Engine::Update(DeltaTime);
@@ -54,6 +89,24 @@ void TwineEngine::Update(float DeltaTime)
 
 	if (CurrentState == TwineGameMode::Overworld)
 	{
+
+		// count down probe timer and clear when done.
+		if (Probe.IsActive())
+		{
+			ProbeTimer -= DeltaTime;
+			if (ProbeTimer <= 0.f)
+				Probe.Clear();
+		}
+
+
+		// spawn probe this frame if Z was pressed
+		if (bInteractPressed)
+		{
+			Probe.Spawn(GamePlayer->GetPosition(), GamePlayer->GetBounds(), GamePlayer->GetFacingDirection());
+			ProbeTimer = 0.060f;
+			bInteractPressed = false;
+		}
+
 		// save player position before movement.
 		Vector2f LastValidPos = GamePlayer->GetPosition();
 
@@ -88,6 +141,8 @@ void TwineEngine::Update(float DeltaTime)
 		}
 
 		CheckEnemyCollision();
+		CheckInteraction();
+
 	}
 
 	// update debug text when our player moves
@@ -95,10 +150,10 @@ void TwineEngine::Update(float DeltaTime)
 	"\nY: " + to_string((int)GamePlayer->GetPosition().y)
 	+ "\nMode: " + (CurrentState == TwineGameMode::Battle ? "Battle" : "Overworld"));
 	// line got too long so i had to move them down.
-	
 
 	// set the camera to our player.
 	Camera.setCenter(GamePlayer->GetPosition());
+
 }
 
 void TwineEngine::Draw()
@@ -112,14 +167,18 @@ void TwineEngine::Draw()
 	Window.setView(Camera);
 
 	if (CurrentRoom) CurrentRoom->Draw(Window);
-
 	// draw every enemy on screen.
-	for (Enemy* e : Enemies)
-	{
-		e->Draw(Window);
-	}
-		
+	for (Enemy* e : Enemies) e->Draw(Window);
 	if (GamePlayer) GamePlayer->Draw(Window);
+
+	if (Probe.IsActive())
+	{
+		FloatRect PB = Probe.GetBounds();
+		RectangleShape ProbeRect(PB.size);
+		ProbeRect.setPosition(PB.position);
+		ProbeRect.setFillColor(Color::Yellow);
+		Window.draw(ProbeRect);
+	}
 
 	if (bShowCollisionDebug)
 	{
@@ -131,6 +190,16 @@ void TwineEngine::Draw()
 	PlayerDebugText.DrawText();
 
 	Window.display();
+}
+
+void TwineEngine::OnKeyPressed(Keyboard::Key key)
+{
+	Message("From TwineEngine, Key Pressed: " << (int)key);
+	if (key == Keyboard::Key::Z)
+	{
+		Message("Z pressed, spawning probe!");
+		bInteractPressed = true;
+	}
 }
 
 void TwineEngine::CheckEnemyCollision()

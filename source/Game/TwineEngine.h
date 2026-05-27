@@ -1,4 +1,6 @@
 #pragma once
+#include "Core/Interactable.h"
+#include "Core/InteractProbe.h"
 #include "Engine/Engine.h"
 #include "Rooms/BaseRoom.h"
 #include "Player/Player.h"
@@ -37,12 +39,17 @@ protected:
 	void Update(float DeltaTime) override;
 	void Draw() override;
 
+	void OnKeyPressed(Keyboard::Key key) override;
+
 	const char* GetName() const override { return "TwineEngine"; }
 
 private:
 	void CheckEnemyCollision();
 	void ResolveEnemyCollision(Enemy* enemy);
 	void EnterBattle(Enemy* enemy);
+
+	void CheckInteraction();
+	void DrawProbeDebug();
 
 private:
 	// demo sprites
@@ -63,5 +70,16 @@ private:
 	// enemies.
 	vector<Enemy*> Enemies;
 	TwineGameMode CurrentState = TwineGameMode::Overworld;
+
+	// interaction
+	InteractProbe Probe;
+	vector<Interactable*> Interactables;
+
+	// key binds.
+	// in the future, we should make these keys configurable.
+	bool bInteractPressed = false;
+
+	// probe
+	float ProbeTimer = 0.f;
 
 };
