@@ -5,8 +5,6 @@ Enemy::Enemy(Vector2f spawnPosition, float patrolDistance) : PatrolDistance(patr
 	Position = spawnPosition;
 	PatrolOriginX = spawnPosition.x;
 
-	// todo: rename variables.
-	CharacterSprite.Load("content/textures/player/character_base_16x16_temp.png");
 	CharacterSprite.Load("content/textures/player/character_base_16x16_temp.png");
 	CharacterSprite.setPosition(Position);
 	CharacterSprite.SetScale(6);

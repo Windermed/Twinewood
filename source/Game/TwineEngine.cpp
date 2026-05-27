@@ -32,6 +32,12 @@ void TwineEngine::Initialize()
 	// to test, let's spawn a few enemies to our room and see what happens.
 	Enemies.push_back(new Enemy({ SpawnPoint.x + 200.f, SpawnPoint.y }, 120.f));
 	Enemies.push_back(new Enemy({ SpawnPoint.x + 500.f, SpawnPoint.y }, 200.f));
+
+	RegisterObject(GamePlayer);
+	for (Enemy* e : Enemies)
+	{
+		RegisterObject(e);
+	}
 }
 
 void TwineEngine::Input()
@@ -48,7 +54,33 @@ void TwineEngine::Update(float DeltaTime)
 
 	if (CurrentState == TwineGameMode::Overworld)
 	{
+		// save player position before movement.
+		Vector2f LastValidPos = GamePlayer->GetPosition();
+
 		GamePlayer->Update(DeltaTime);
+
+		// sample all 8 points around the collision bounds
+		FloatRect Bounds = GamePlayer->GetBounds();
+
+		float Left = Bounds.position.x;
+		float Right = Bounds.position.x + Bounds.size.x;
+		float Top = Bounds.position.y;
+		float Bottom = Bounds.position.y + Bounds.size.y;
+		float MidX = Left + Bounds.size.x / 2.0f;
+		float MidY = Top + Bounds.size.y / 2.0f;
+
+		bool bBlocked = !CurrentRoom->IsWalkable({Left, Top}) || !CurrentRoom->IsWalkable({ Right, Top }) ||
+		!CurrentRoom->IsWalkable({Left, Bottom}) ||
+		!CurrentRoom->IsWalkable({Right, Bottom}) ||
+		!CurrentRoom->IsWalkable({MidX, Top}) ||
+		!CurrentRoom->IsWalkable({MidX, Bottom}) ||
+		!CurrentRoom->IsWalkable({Left, MidY}) ||
+		!CurrentRoom->IsWalkable({Right, MidY});
+
+		if (bBlocked)
+		{
+			GamePlayer->SetPosition(LastValidPos);
+		}
 
 		for (Enemy* e : Enemies)
 		{
@@ -71,6 +103,9 @@ void TwineEngine::Update(float DeltaTime)
 
 void TwineEngine::Draw()
 {
+
+	//Engine::Draw();
+
 	Window.clear(Color::Black);
 
 	// apply camera for world rendering
@@ -86,9 +121,13 @@ void TwineEngine::Draw()
 		
 	if (GamePlayer) GamePlayer->Draw(Window);
 
+	if (bShowCollisionDebug)
+	{
+		DrawCollisionDebug();
+	}
+
 	// switch back to default view for HUD
 	Window.setView(Window.getDefaultView());
-
 	PlayerDebugText.DrawText();
 
 	Window.display();

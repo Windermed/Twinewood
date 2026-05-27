@@ -55,7 +55,7 @@ private:
 	GameText TeaserText;
 
 	BaseRoom* CurrentRoom = nullptr;
-	Player* GamePlayer = nullptr;
+	Player* GamePlayer = nullptr; // in the future, lets fix this in engine so that this isnt necessary.
 	View Camera;
 
 	GameText PlayerDebugText;
