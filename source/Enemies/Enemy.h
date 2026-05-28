@@ -19,7 +19,27 @@ public:
 	bool IsEngaged() const { return bIsEngaged; }
 	void SetEngaged(bool engaged) { bIsEngaged = engaged; }
 
-private:
+	void StartHitEffect()
+	{
+		Character::StartHitEffect();
+		// store original tint to restore after flash
+		OriginalColor = CharacterSprite.getColor();
+	}
+
+	void SetCharacterID(const std::string& id) { CharacterID = id; }
+	void SetBattleBackground(const std::string& path) { BattleBackgroundPath = path; }
+
+	string GetEnemyItemDefinition() const { return CharacterID; }
+	string GetBattleBackground() const { return BattleBackgroundPath; }
+
+protected:
+
+	// default battle bg. we could change this later.
+	string BattleBackgroundPath = "content/textures/battle/test_room_background.png";
+
+	Color GetBaseColor() const override { return Color(255, 100, 100); }
+	string CharacterID = "";
+
 	float PatrolDistance = 150.0f;
 	float PatrolOriginX = 0.0f;
 
@@ -27,4 +47,6 @@ private:
 	float PatrolDirection = 1.0f;
 
 	bool bIsEngaged = false;
+
+	Color OriginalColor = Color(255, 100, 100);
 };

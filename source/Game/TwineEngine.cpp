@@ -24,7 +24,7 @@ void TwineEngine::Initialize()
 	GamePlayer = new Player();
 
 	// spawn player at the room's spawn point.
-	CurrentRoom->SetSpawnPoint({ -200, 2110 });
+	CurrentRoom->SetSpawnPoint({ -300, 2050 });
 	GamePlayer->SetPosition(CurrentRoom->GetSpawnPoint());
 
 	// the camera will follow player
@@ -35,15 +35,76 @@ void TwineEngine::Initialize()
 	GamePlayer->SetMovementBounds(RoomOffset.x, RoomOffset.y, RoomOffset.x + RoomSize.x, RoomOffset.y + RoomSize.y);
 	Camera.setCenter(GamePlayer->GetPosition());
 
+	// setup dialogue box sprite.
+	OverworldDialogueBox.Load("content/textures/ui/battle/spr_dialogue_box.png");
+	OverworldDialogueBox.setScale({ (SCREEN_WIDTH - 20.f) / 170.f, 4.f });
+	OverworldDialogueBox.setPosition({ 600.f, (float)SCREEN_HEIGHT - 220.f });
+
+	OverworldDialogueText = GameText("", 22, Color::White, false);
+	OverworldDialogueText.setPosition({ 70.f, (float)SCREEN_HEIGHT - 290.f });
+	OverworldDialogueText.SetFont(SMT2_FONT);
+
+	
+	Vector2f SpawnPoint = CurrentRoom->GetSpawnPoint();
+	// intended coords are 1904.0f, and -139.0f.
+	//DialogueTriggerBox* StairTriggerBox = new DialogueTriggerBox({ 1904.0f, -139.0f},
+
+	// FOR TESTING
+	//DialogueTriggerBox* StairTriggerBox = new DialogueTriggerBox({ SpawnPoint.x + 100.0f, SpawnPoint.y + 139.0f },
+
+	DialogueTriggerBox* StairTriggerBox = new DialogueTriggerBox({ 1904.0f, -139.0f },
+	{
+		"This looks like it leads somewhere..",
+		"for some reason though, you get this\nweird feeling.",
+		"a feeling that you shouldn't go in\njust yet.",
+		"...",
+		"you wonder if this area is unfinished\nand not ready to be seen.",
+		"...",
+		"maybe i should wait until this is ready."
+	});
+
+
+	// 3052, -1452
+	//DialogueTriggerBox* EndTriggerBox = new DialogueTriggerBox({ 3052, -1452 },
+	DialogueTriggerBox* EndTriggerBox = new DialogueTriggerBox({ 3052, -1452 },
+	{
+		"You tried slowly to open the door\nto see that's inside...",
+		"?",
+		"It's... locked?",
+		"within the boss, he dropped a note.",
+		"This note reads:",
+		"EVEN IF YOU DEFEAT ME, YOU CAN'T GO\nINSIDE JUST YET.",
+		"COME BACK ANOTHER TIME.\nANOTHER DAY EVEN.",
+		"IF YOU DO. THERE MIGHT BE\n SOMETHING ELSE WAITING.",
+		"..."
+		"in other words\nit's the end of the demo!"
+	});
+
+	DialogueTriggers.push_back(StairTriggerBox);
+	DialogueTriggers.push_back(EndTriggerBox);
+	Interactables.push_back(StairTriggerBox);
+	Interactables.push_back(EndTriggerBox);
+
+	// debug text that prints out coords..
 	PlayerDebugText = GameText("", 24, Color::Yellow, false);
 	PlayerDebugText.setPosition({ 10, 10 });
+	PlayerDebugText.setCharacterSize(20);
+	PlayerDebugText.SetFont(SMT1_FONT);
 
-	Vector2f SpawnPoint = CurrentRoom->GetSpawnPoint();
-	// to test, let's spawn a few enemies to our room and see what happens.
-	Enemies.push_back(new Enemy({ SpawnPoint.x + 200.f, SpawnPoint.y }, 120.f));
-	Enemies.push_back(new Enemy({ SpawnPoint.x + 500.f, SpawnPoint.y }, 200.f));
+	Enemies.push_back(new Enemy({ -400.f, 142.f }, 150.f));
+	Enemies[0]->SetCharacterID("Character_Test02");
+
+	Enemies.push_back(new Enemy({ -600.f, 142.f }, 150.f));
+	Enemies[1]->SetCharacterID("Character_Test02");
+
+	// boss enemy.
+	Enemies.push_back(new Enemy({ 3052, -1452 }, 0.0f));
+	Enemies[2]->SetCharacterID("Character_Boss");
+	Enemies[2]->SetBattleBackground("content/textures/battle/spr_test_room_background_boss.png");
 
 	RegisterObject(GamePlayer);
+	RegisterObject(StairTriggerBox);
+	RegisterObject(EndTriggerBox);
 	for (Enemy* e : Enemies)
 	{
 		RegisterObject(e);
@@ -60,6 +121,8 @@ void TwineEngine::CheckInteraction()
 {
 	if (!Probe.IsActive()) return;
 
+	//Message("Probe active, time to check for " << Interactables.size() << " interactables");
+
 	for (Interactable* obj : Interactables)
 	{
 		if (!obj->CanInteract()) continue;
@@ -68,9 +131,23 @@ void TwineEngine::CheckInteraction()
 		Object* interactObj = dynamic_cast<Object*>(obj);
 		if (!interactObj) continue;
 
+		Message("Probe bounds are: " << Probe.GetBounds().position.x << ", " << Probe.GetBounds().position.y << " size: " << Probe.GetBounds().size.x << ", " << Probe.GetBounds().size.y);
+
+		Message("Trigger bounds: " << interactObj->GetBounds().position.x << ", " << interactObj->GetBounds().position.y << " size: " << interactObj->GetBounds().size.x << ", " << interactObj->GetBounds().size.y);
+
 		if (Probe.GetBounds().findIntersection(interactObj->GetBounds()))
 		{
+			Message("Interaction triggered!");
 			obj->OnInteract();
+
+			// checks if we are hitting a dialogue trigger
+			DialogueTriggerBox* trigger = dynamic_cast<DialogueTriggerBox*>(obj);
+			if (trigger && trigger->IsActive())
+			{
+				ActiveDialogue = trigger;
+				bDialogueActive = true;
+				StartDialogueScroll(trigger->GetCurrentLine());
+			}
 		}
 	}
 
@@ -91,15 +168,23 @@ void TwineEngine::DrawProbeDebug()
 	Window.draw(ProbeRect);
 }
 
+void TwineEngine::DrawOverworldDialogue()
+{
+	if (!bDialogueActive || !ActiveDialogue) return;
+
+	Window.draw(OverworldDialogueBox);
+	OverworldDialogueText.DrawText();
+}
+
 void TwineEngine::Update(float DeltaTime)
 {
 	Engine::Update(DeltaTime);
 
 	if (!CurrentRoom || !GamePlayer) return;
 
+
 	// dont update if we are on the character table screen.
 	if (CurrentState == TwineGameMode::CharacterTableTest) return;
-	
 
 	if (CurrentState == TwineGameMode::Overworld)
 	{
@@ -119,42 +204,73 @@ void TwineEngine::Update(float DeltaTime)
 			bInteractPressed = false;
 		}
 
-		// save player position before movement.
-		Vector2f LastValidPos = GamePlayer->GetPosition();
-
-		GamePlayer->Update(DeltaTime);
-
-		// sample all 8 points around the collision bounds
-		FloatRect Bounds = GamePlayer->GetBounds();
-
-		float Left = Bounds.position.x;
-		float Right = Bounds.position.x + Bounds.size.x;
-		float Top = Bounds.position.y;
-		float Bottom = Bounds.position.y + Bounds.size.y;
-		float MidX = Left + Bounds.size.x / 2.0f;
-		float MidY = Top + Bounds.size.y / 2.0f;
-
-		bool bBlocked = !CurrentRoom->IsWalkable({Left, Top}) || !CurrentRoom->IsWalkable({ Right, Top }) ||
-		!CurrentRoom->IsWalkable({Left, Bottom}) ||
-		!CurrentRoom->IsWalkable({Right, Bottom}) ||
-		!CurrentRoom->IsWalkable({MidX, Top}) ||
-		!CurrentRoom->IsWalkable({MidX, Bottom}) ||
-		!CurrentRoom->IsWalkable({Left, MidY}) ||
-		!CurrentRoom->IsWalkable({Right, MidY});
-
-		if (bBlocked)
+		// text scroll update that runs regardless.
+		if (bOverworldScrolling)
 		{
-			GamePlayer->SetPosition(LastValidPos);
+			OverworldScrollTimer += DeltaTime;
+			if (OverworldScrollTimer >= OverworldScrollSpeed)
+			{
+				OverworldScrollTimer = 0.f;
+				OverworldDisplayedChars++;
+				if (OverworldDisplayedChars >= (int)OverworldFullText.size())
+				{
+					OverworldDisplayedChars = (int)OverworldFullText.size();
+					bOverworldScrolling = false;
+
+				}
+				else
+				{
+					// allows for SFX to play for each char that isnt a space.
+					char c = OverworldFullText[OverworldDisplayedChars - 1];
+					if (c != ' ' && c != '\n')
+					{
+						Engine::PlaySound("snd_scroll_text.wav", 30.f);
+					}
+				}
+				OverworldDialogueText.setString(OverworldFullText.substr(0, OverworldDisplayedChars));
+			}
 		}
 
-		for (Enemy* e : Enemies)
+		// block movement and enemy updates during dialogue
+		if (!bDialogueActive)
 		{
-			e->Update(DeltaTime);
+			// save player position before movement.
+			Vector2f LastValidPos = GamePlayer->GetPosition();
+
+			GamePlayer->Update(DeltaTime);
+
+			// sample all 8 points around the collision bounds
+			FloatRect Bounds = GamePlayer->GetBounds();
+
+			float Left = Bounds.position.x;
+			float Right = Bounds.position.x + Bounds.size.x;
+			float Top = Bounds.position.y;
+			float Bottom = Bounds.position.y + Bounds.size.y;
+			float MidX = Left + Bounds.size.x / 2.0f;
+			float MidY = Top + Bounds.size.y / 2.0f;
+
+			// FOR COLLISION.
+			bool bBlocked = !CurrentRoom->IsWalkable({ Left, Top }) || !CurrentRoom->IsWalkable({ Right, Top }) ||
+			!CurrentRoom->IsWalkable({ Left, Bottom }) ||
+			!CurrentRoom->IsWalkable({ Right, Bottom }) ||
+			!CurrentRoom->IsWalkable({ MidX, Top }) ||
+			!CurrentRoom->IsWalkable({ MidX, Bottom }) ||
+			!CurrentRoom->IsWalkable({ Left, MidY }) ||
+			!CurrentRoom->IsWalkable({ Right, MidY });
+
+			if (bBlocked)
+			{
+				GamePlayer->SetPosition(LastValidPos);
+			}
+
+			for (Enemy* e : Enemies)
+			{
+				e->Update(DeltaTime);
+			}
+
+			CheckEnemyCollision();
+			CheckInteraction();
 		}
-
-		CheckEnemyCollision();
-		CheckInteraction();
-
 	}
 
 	if (CurrentState == TwineGameMode::Battle)
@@ -163,13 +279,35 @@ void TwineEngine::Update(float DeltaTime)
 		{
 			CurrentBattle->Update(DeltaTime);
 
-			// if battle is over and the player has won.
-			if (CurrentBattle->IsBattleOver() && CurrentBattle->IsPlayerWon())
+			if (CurrentBattle->IsBattleOver())
 			{
+				// only get rid of the enemy assuming the player has won and not escaped (like a fraud)
+				if (CurrentBattle->IsPlayerWon())
+				{
+					for (Enemy* e : Enemies)
+					{
+						if (e->IsEngaged())
+						{
+							e->SetVisible(false);
+						}
+					}
+				}
+				else
+				{
+					// since the player escaped. the enemy will be re-enabled so that it can be fought again.
+					for (Enemy* e : Enemies)
+					{
+						if (e->IsEngaged())
+						{
+							e->SetEngaged(false);
+						}
+					}
+				}
+
 				// we return to the overworld.
 				delete CurrentBattle;
-				CurrentBattle = nullptr; // reset.
-				CurrentState = TwineGaemMode::Overworld;
+				CurrentBattle = nullptr;
+				CurrentState = TwineGameMode::Overworld;
 				GamePlayer->SetInputLocked(false);
 			}
 		}
@@ -187,31 +325,18 @@ void TwineEngine::Update(float DeltaTime)
 void TwineEngine::Draw()
 {
 	Window.clear(Color::Black);
-
 	
-	// draw battle.
-	if (CurrentState == TwineGameMode::Battle)
+	if (CurrentState != TwineGameMode::Battle)
 	{
-		Window.setView(Window.getDefaultView());
-		if (CurrentBattle) CurrentBattle->Draw(Window);
-	}
-
-	// only draw world if we are in overworld or battle.
-	if (CurrentState != TwineGameMode::CharacterTableTest)
-	{
-		// apply camera for world rendering
 		Window.setView(Camera);
-
 		if (CurrentRoom) CurrentRoom->Draw(Window);
-		// draw every enemy on screen.
 		for (Enemy* e : Enemies) e->Draw(Window);
 		if (GamePlayer) GamePlayer->Draw(Window);
 
 		if (bShowCollisionDebug)
 		{
 			DrawCollisionDebug();
-
-			if (Probe.IsActive())
+			if (Probe.IsActive()) 
 			{
 				FloatRect PB = Probe.GetBounds();
 				RectangleShape ProbeRect(PB.size);
@@ -222,41 +347,116 @@ void TwineEngine::Draw()
 		}
 	}
 
-	// switch back to default view for HUD
 	Window.setView(Window.getDefaultView());
 
-	if (CurrentState == TwineGameMode::CharacterTableTest)
+	if (CurrentState == TwineGameMode::Battle)
 	{
-		if (CharTableScreen) CharTableScreen->Draw(Window);
+		if (CurrentBattle)
+		{
+			CurrentBattle->Draw(Window);
+		}
+	}
+	else if (CurrentState == TwineGameMode::CharacterTableTest)
+	{
+		if (CharTableScreen)
+		{
+			CharTableScreen->Draw(Window);
+		}
 	}
 
-
-
+	DrawOverworldDialogue();
 	PlayerDebugText.DrawText();
-
 	Window.display();
 }
 
+
+// TODO: MASSIVE CLEANUP.
 void TwineEngine::OnKeyPressed(Keyboard::Key key)
 {
 	Message("From TwineEngine, Key Pressed: " << (int)key);
-	if (key == Keyboard::Key::Z)
+
+	// for sfx related to UI.
+	// i'm aware of how sloppy this is. I will look into doing a more proper way of handling SFX in the future.
+	if (CurrentState == TwineGameMode::Battle || CurrentState == TwineGameMode::CharacterTableTest)
 	{
-		Message("Z pressed, spawning probe!");
-		bInteractPressed = true;
+		// to avoid the UI SFX from playing while dialogue is running.
+		bool bBattleMessaging = CurrentState == TwineGameMode::Battle && CurrentBattle && (CurrentBattle->IsShowingMessage() || CurrentBattle->IsScrolling());
+
+		// avoids UI sound from playing even when pressing X.
+		bool bSkippingScroll = key == Keyboard::Key::X && CurrentBattle && CurrentBattle->IsScrolling();
+
+		if (!bBattleMessaging)
+		{
+			if (key == Keyboard::Key::Left || key == Keyboard::Key::Right || key == Keyboard::Key::Up || key == Keyboard::Key::Down || key == Keyboard::Key::Backspace)
+			{
+				Engine::PlaySound("snd_ui_select.wav", 15.0f);
+			}
+
+			if (key == Keyboard::Key::Enter || key == Keyboard::Key::Z)
+			{
+				Engine::PlaySound("snd_ui_select_confirm.wav", 45.0f);
+			}
+		}
+
+	}
+
+	if (CurrentState == TwineGameMode::Overworld)
+	{
+		// for dialogue triggers.
+		if (bDialogueActive && ActiveDialogue)
+		{
+			if (key == Keyboard::Key::Z || key == Keyboard::Key::Enter || key == Keyboard::Key::X)
+			{
+				if (bOverworldScrolling)
+				{
+					bOverworldScrolling = false;
+					OverworldDialogueText.setString(OverworldFullText);
+					return;
+				}
+
+				ActiveDialogue->Dismiss();
+				Message("IsFinished is now: " << ActiveDialogue->IsFinished());
+
+				if (ActiveDialogue->IsFinished())
+				{
+					Message("Dialogue has finished!!");
+					bDialogueActive = false;
+					ActiveDialogue = nullptr;
+					bOverworldScrolling = false;
+					OverworldDialogueText.setString("");
+				}
+				else
+				{
+					StartDialogueScroll(ActiveDialogue->GetCurrentLine());
+				}
+				return;
+			}
+		}
+
+		// for inteacting.
+		if (key == Keyboard::Key::Z)
+		{
+			Message("Z pressed, spawning probe!");
+			bInteractPressed = true;
+		}
+		
 	}
 
 	// pass all inputs to battle.
 	if (CurrentState == TwineGameMode::Battle)
 	{
-		if (CurrentBattle) CurrentBattle->OnKeyPressed(key);
+		if (CurrentBattle)
+			CurrentBattle->OnKeyPressed(key);
 		return;
 	}
 
 	// pass all inputs to the character table test room.
 	if (CurrentState == TwineGameMode::CharacterTableTest)
 	{
-		if (CharTableScreen) CharTableScreen->OnKeyPressed(key);
+
+		if (CharTableScreen) 
+			CharTableScreen->OnKeyPressed(key);
+
 		if (key == Keyboard::Key::Space)
 			CurrentState = TwineGameMode::Overworld;
 		return;
@@ -298,8 +498,8 @@ void TwineEngine::ResolveEnemyCollision(Enemy* enemy)
 	float HalfWidths = (PB.size.x + EB.size.x) / 2.f;
 	float HalfHeights = (PB.size.y + EB.size.y) / 2.f;
 
-	float interactX = HalfWidths - std::abs(OverlapX);
-	float interactY = HalfHeights - std::abs(OverlapY);
+	float interactX = HalfWidths - abs(OverlapX);
+	float interactY = HalfHeights - abs(OverlapY);
 
 	Vector2f PlayerPos = GamePlayer->GetPosition();
 
@@ -312,26 +512,33 @@ void TwineEngine::ResolveEnemyCollision(Enemy* enemy)
 	{
 		PlayerPos.y += (OverlapY > 0.f ? interactY : -interactY);
 	}
-
-	GamePlayer->SetPosition(PlayerPos);
-		
+	GamePlayer->SetPosition(PlayerPos);	
 }
 
 void TwineEngine::EnterBattle(Enemy* enemy)
 {
+	SoundManager::GetInstance().PlaySound("snd_battle_transition.wav");
 	enemy->SetEngaged(true);
 	CurrentState = TwineGameMode::Battle;
 	GamePlayer->SetInputLocked(true);
-
 	
+	// player is always the first in the table's json.
 	CharacterTable PlayerEntry = CharacterEntries[0];
+	CharacterTable EnemyEntry = CharacterEntries[1]; // just in case lol.
 
-	// for now, we will only do one enemy.
-	CharacterTable EnemyEntry = CharacterEntries[1];
+	// find enemy entry by it's item definition.
+	for (auto& entry : CharacterEntries)
+	{
+		if (entry.GetItemDefinition() == enemy->GetEnemyItemDefinition())
+		{
+			EnemyEntry = entry;
+			break;
+		}
+	}
 
 	// clean up any previous battles if they remain.
 	if (CurrentBattle) { delete CurrentBattle; CurrentBattle = nullptr; }
 
-	CurrentBattle = new BattleSequence(PlayerEntry, EnemyEntry);
-
+	// start up a battle.
+	CurrentBattle = new BattleSequence(PlayerEntry, EnemyEntry, enemy->GetBattleBackground(), 5, 55);
 }

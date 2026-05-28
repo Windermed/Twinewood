@@ -7,6 +7,7 @@
 #include "Rooms/BaseRoom.h"
 #include "Player/Player.h"
 #include "Enemies/Enemy.h"
+#include "Props/DialogueTriggerBox.h"
 #include "Battle/BattleSequence.h"
 #include <vector>
 
@@ -22,6 +23,8 @@ class TwineEngine : public Engine
 public:
 	TwineEngine() {}
 
+	// TODO: CLEAN THIS UPPP!!!!
+	
 	// initialize the engine instance.
 	static void Init()
 	{
@@ -55,6 +58,16 @@ private:
 	void CheckInteraction();
 	void DrawProbeDebug();
 
+	void DrawOverworldDialogue();
+
+	void StartDialogueScroll(const std::string& message)
+	{
+		OverworldFullText = message;
+		OverworldDisplayedChars = 0;
+		OverworldScrollTimer = 0.f;
+		bOverworldScrolling = true;
+		OverworldDialogueText.setString("");
+	}
 private:
 	// demo sprites
 	GameSprite DemoSprite;
@@ -85,6 +98,21 @@ private:
 	// interaction
 	InteractProbe Probe;
 	vector<Interactable*> Interactables;
+
+	// dialogue display in overworl.d
+	// todo: figure out proper dialogue.
+	vector<DialogueTriggerBox*> DialogueTriggers;
+	GameSprite OverworldDialogueBox;
+
+	GameText OverworldDialogueText;
+	bool bDialogueActive = false;
+	DialogueTriggerBox* ActiveDialogue = nullptr;
+
+	string OverworldFullText;
+	int OverworldDisplayedChars = 0;
+	float OverworldScrollTimer = 0.f;
+	float OverworldScrollSpeed = 0.03f;
+	bool bOverworldScrolling = false;
 
 	// key binds.
 	// in the future, we should make these keys configurable.

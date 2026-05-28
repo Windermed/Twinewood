@@ -1,4 +1,5 @@
 #include "CharacterTableScreen.h"
+#include "Game/TwineEngine.h"
 
 // layout constants JUST so we don't have to type them over and over again.
 
@@ -76,10 +77,23 @@ void CharacterTableScreen::RebuildDetailPanel()
 	CharacterMPText = GameText("MP:  " + std::to_string(e.GetBaseMP()) + " / " + std::to_string(e.GetBaseMP()), HPMPFontSize, Color(80, 180, 220), false);
 
 	CharacterNameText.setPosition({ InfoTextX, PortraitY });
+	CharacterNameText.SetFont(SMT1_FONT);
+
 	CharacterDescriptionText.setPosition({ InfoTextX, PortraitY + (55.0f * UIScale) });
-	CharacterLevelText.setPosition({ InfoTextX, PortraitY + (100.0f * UIScale) });
-	CharacterHPText.setPosition({ InfoTextX, PortraitY + (160.0f * UIScale) });
-	CharacterMPText.setPosition({ InfoTextX, PortraitY + (200.0f * UIScale) });
+	CharacterDescriptionText.SetFont(SMT2_FONT);
+	CharacterDescriptionText.setScale({0.75, 0.75});
+
+	CharacterLevelText.setPosition({ InfoTextX, PortraitY + (120.0f * UIScale) });
+	CharacterLevelText.SetFont(SMT1_FONT);
+	CharacterLevelText.setScale({ 0.75, 0.75 });
+
+	CharacterHPText.setPosition({ InfoTextX, PortraitY + (180.0f * UIScale) });
+	CharacterHPText.SetFont(SMT1_FONT);
+	CharacterHPText.setScale({ 0.75, 0.75 });
+
+	CharacterMPText.setPosition({ InfoTextX, PortraitY + (220.0f * UIScale) });
+	CharacterMPText.SetFont(SMT1_FONT);
+	CharacterMPText.setScale({ 0.75, 0.75 });
 	
 	float ScaledH = 12.0f * StatBar::UIScale;
 
@@ -92,11 +106,11 @@ void CharacterTableScreen::RebuildDetailPanel()
 	std::vector<StatDef> statDefs =
 	{
 		// looks cleaner to read.
-		{ "STR",	Stats.Strength, Color(220, 80,  80)},
-		{ "MAG",		Stats.Magic,    Color(80,  120, 220)},
-		{ "VIT",	Stats.Vitality, Color(80,  200, 80)},
-		{ "AGI",	Stats.Agility,	Color(220, 220, 80)},
-		{ "LU",		Stats.Luck,		Color(80,  220, 220)}
+		{ "STR",	Stats.Strength,		Color(220, 80,  80)},
+		{ "MAG",	Stats.Magic,		Color(180,  80, 255)},
+		{ "VIT",	Stats.Vitality,		Color(80,  200, 80)},
+		{ "AGI",	Stats.Agility,		Color(220, 220, 80)},
+		{ "LU",		Stats.Luck,			Color(80,  220, 220)}
 	};
 
 
@@ -108,45 +122,61 @@ void CharacterTableScreen::RebuildDetailPanel()
 
 	// sets up font for the text used before stat bar.
 	for (StatBar& bar : StatBars)
-		bar.SetTextFont(BM_SPACE_FONT);
+		bar.SetTextFont(SMT1_FONT);
 
 	// applies a different font for other text elements.
-	ApplyFont(BM_SPACE_FONT);
+	//ApplyFont(SMT1_FONT);
 }
 
 void CharacterTableScreen::DrawDividerWithLabel(RenderWindow& window, float y, const std::string& label)
 {
 	// full right panel width
-	float FullWidth = SCREEN_WIDTH - 160.0f;
-	float HalfW = FullWidth / 2.0f;
-	float LabelW = 60.0f; 
+	float StartX = 80.f;
+	float EndX = (float)SCREEN_WIDTH - 80.f;
+	float TotalW = EndX - StartX;
+	float CenterX = StartX + TotalW / 2.f;
+	float LabelW = 60.f;
+	float LineWidth = TotalW / 2.f - LabelW;
 
 	// left line.
-	RectangleShape LineL({ HalfW - LabelW, 2.0f * UIScale});
+	RectangleShape LineL({ LineWidth, 2.f * UIScale });
 	LineL.setFillColor(Color(80, 80, 80));
-	LineL.setPosition({ 80.0f, y });
+	LineL.setPosition({ StartX, y });
 	window.draw(LineL);
 
 	// the label set in center.
 	GameText DivLabel(label, (unsigned int)(18.f * UIScale), Color(180, 180, 180), false);
-	DivLabel.setPosition({ 80.0f + HalfW - 20.0f, y - 18.0f });
+	DivLabel.SetFont(SMT1_FONT);
+
+	float LeftLineEnd = StartX + LineWidth;
+	float RightLineStart = CenterX + LabelW;
+	float GapCenter = LeftLineEnd + (RightLineStart - LeftLineEnd) / 2.f;
+
+	// measure the text width after font is set
+	FloatRect LabelBounds = DivLabel.getLocalBounds();
+	float LabelHalfWidth = LabelBounds.position.x + LabelBounds.size.x / 2.f;
+
+	// position so text center lands on CenterX
+	DivLabel.setPosition({ GapCenter - LabelHalfWidth, y - LabelBounds.size.y });
 	DivLabel.DrawText();
 
 	// right line.
-	RectangleShape LineR({ HalfW - LabelW, 2.f * UIScale });
+	RectangleShape LineR({ LineWidth, 2.f * UIScale });
 	LineR.setFillColor(Color(80, 80, 80));
-	LineR.setPosition({ 80.0f + HalfW + LabelW, y });
+	LineR.setPosition({ CenterX + LabelW, y });
 	window.draw(LineR);
 }
 
 void CharacterTableScreen::DrawSelectionScreen(RenderWindow& window)
 {
-	GameText Title("CHARACTER TABLE", 32, Color::Yellow, false);
-	Title.setPosition({ SCREEN_WIDTH / 2.0f - 160.0f, 60.0f });
+	GameText Title("CHARACTER PREVIEW", 32, Color::Yellow, false);
+	Title.setPosition({ SCREEN_WIDTH / 2.0f - 285.0f, 60.0f });
+	Title.SetFont(SMT1_FONT);
 	Title.DrawText();
 
-	GameText Instructions("UP/DOWN: Navigate   ENTER: Select   SPACE: Exit", 16, Color(150, 150, 150), false);
-	Instructions.setPosition({ SCREEN_WIDTH / 2.0f - 240.0f, 1040.0f });
+	GameText Instructions("UP/DOWN: Navigate   Z: Select   SPACE: Exit", 20, Color(150, 150, 150), false);
+	Instructions.setPosition({ SCREEN_WIDTH / 2.0f - 450.0f, 900.0f });
+	Instructions.SetFont(SMT1_FONT);
 	Instructions.DrawText();
 
 	// for each entry.
@@ -174,6 +204,7 @@ void CharacterTableScreen::DrawSelectionScreen(RenderWindow& window)
 		}
 
 		EntryLabels[i].setPosition({ EntryX, EntryY });
+		EntryLabels[i].SetFont(SMT2_FONT);
 		EntryLabels[i].DrawText();
 
 	}
@@ -189,9 +220,13 @@ void CharacterTableScreen::DrawDetailScreen(RenderWindow& window)
 	float StatsY = PortraitY + PortraitSize + (80.0f * UIScale);
 
 	// back instructions.
-	GameText BackText("BACKSPACE: Back", 16, Color(150, 150, 150), false);
-	BackText.setPosition({ 40.0f, 1040.0f });
-	BackText.DrawText();
+	if (bShowInstructions)
+	{
+		GameText BackText(CustomBackText, 16, Color(150, 150, 150), false);
+		BackText.setPosition({ 40.f, (float)SCREEN_HEIGHT - 40.f });
+		BackText.SetFont(SMT1_FONT);
+		BackText.DrawText();
+	}
 
 	// draws portrait box and sprite.
 	window.draw(PortraitBGSprite);
@@ -233,7 +268,7 @@ void CharacterTableScreen::OnKeyPressed(Keyboard::Key key)
 				RebuildDetailPanel();
 			}
 		}
-		else if (key == Keyboard::Key::Enter)
+		else if (key == Keyboard::Key::Z)
 		{
 			RebuildDetailPanel();
 			ScreenState = TableScreenState::Detail;
@@ -241,13 +276,31 @@ void CharacterTableScreen::OnKeyPressed(Keyboard::Key key)
 	}
 	else if (ScreenState == TableScreenState::Detail)
 	{
-		// pressing backspace goes back to the selection screen.
+		// pressing X goes back to the selection screen.
 		// todo: if used in battles, we should ensure this depends on a flag.
-		if (key == Keyboard::Key::Backspace)
+		if (key == Keyboard::Key::X)
 		{
 			ScreenState = TableScreenState::Selection;
 		}
-			
+
+		// allows the player to use left and right to navigate thru entries within the stat screen.
+		if (bAllowNavigation)
+		{
+			if (key == Keyboard::Key::Left)
+			{
+				if (CursorIndex > 0) 
+				{ 
+					CursorIndex--; RebuildDetailPanel();
+				}
+			}
+			else if (key == Keyboard::Key::Right)
+			{
+				if (CursorIndex < (int)Entries.size() - 1) 
+				{ 
+					CursorIndex++; RebuildDetailPanel();
+				}
+			}
+		}
 	}
 	
 }

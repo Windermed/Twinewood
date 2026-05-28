@@ -23,6 +23,11 @@ public:
 	void Draw(RenderWindow& window);
 	void OnKeyPressed(Keyboard::Key key);
 
+public:
+	void SetScreenState(TableScreenState state) { ScreenState = state; }
+	void SetAllowNavigation(bool allow) { bAllowNavigation = allow; }
+	void SetBackText(const std::string& text) { CustomBackText = text; }
+	void SetShowInstructions(bool show) { bShowInstructions = show; }
 private:
 	void RebuildDetailPanel();
 	void DrawDividerWithLabel(RenderWindow& window, float y, const string& label);
@@ -38,6 +43,7 @@ private:
 		CharacterHPText.SetFont(fontPath);
 		CharacterMPText.SetFont(fontPath);
 	}
+
 public:
 	// the scale for the portrait. aka where sprites will appear. global.
 	static float PortraitScale;
@@ -59,7 +65,9 @@ private:
 
 	RectangleShape PortraitBox;
 
-	// left panel
+	// character table instruction text.
+	GameText TableInstructionsText;
+
 	GameText TitleText;
 	GameText InstructionsText;
 	vector<GameText> EntryLabels;
@@ -82,6 +90,14 @@ private:
 
 	// the stat bars. meant to go for the right panel
 	vector<StatBar> StatBars;
+
+	// whether or not we allow navigation thru the stat screen. (mainly just so that you cant do this in battle).
+	bool bAllowNavigation = true;
+
+	// show instructions for controls.
+	bool bShowInstructions = true;
+
+	string CustomBackText = "Left/Right: Scroll Through Entries                                 X: Back";
 
 
 };

@@ -4,15 +4,15 @@
       {
         "Character_Test01": {
           "DisplayName": "Protagonist",
-          "Description": "This is the main protagonist. something something flavor text.",
+          "Description": "This is the main protagonist.\nsomething something flavor text.",
           "Level": 1,
-		  "BaseHP": 100,
+		  "BaseHP": 150,
 		  "BaseMP": 50,
           "BaseAttack": 10,
-          "BaseDefense": 8,
+          "BaseDefense": 10,
 		  "SpritePath": "content/textures/player/spr_character_base_overworld.png",
           "Stats": {
-            "Strength": 12,
+            "Strength": 18,
             "Magic": 8,
             "Vitality": 15,
             "Agility": 10,
@@ -22,38 +22,38 @@
       },
       {
         "Character_Test02": {
-          "DisplayName": "Test Enemy Character 2",
-          "Description": "First Enemy Character. mainly for testing.",
+          "DisplayName": "Enemy",
+          "Description": "First Enemy Character. \nhe's angry. but also quite nervous.",
           "Level": 10,
-		  "BaseHP": 200,
+		  "BaseHP": 80,
 		  "BaseMP": 20,
           "BaseAttack": 2,
-          "BaseDefense": 5,
-		  "SpritePath": "content/textures/player/spr_character_base_overworld.png",
+          "BaseDefense": 4,
+		  "SpritePath": "content/textures/player/spr_character_base_enemy.png",
           "Stats": {
-            "Strength": 14,
-            "Magic": 22,
-            "Vitality": 12,
-            "Agility": 11,
-            "Luck": 35
+            "Strength": 12,
+            "Magic": 8,
+            "Vitality": 10,
+            "Agility": 8,
+            "Luck": 6
           }
         }
       },
       {
-        "Character_Test03": {
-          "DisplayName": "Test Character 3",
-          "Description": "Another Enemy Character. This time, this shall be the boss.",
-          "Level": 67,
+        "Character_Boss": {
+          "DisplayName": "Boss Fortress",
+          "Description": "Who is this again?",
+          "Level": 15,
 		  "BaseHP": 200,
 		  "BaseMP": 85,
           "BaseAttack": 2,
-          "BaseDefense": 5,
-		  "SpritePath": "content/textures/player/spr_character_base_overworld.png",
+          "BaseDefense": 4,
+		  "SpritePath": "content/textures/player/spr_character_base_boss.png",
           "Stats": {
-            "Strength": 21,
-            "Magic": 26,
-            "Vitality": 24,
-            "Agility": 11,
+            "Strength": 20,
+            "Magic": 12,
+            "Vitality": 18,
+            "Agility": 9,
             "Luck": 12
           }
         }
