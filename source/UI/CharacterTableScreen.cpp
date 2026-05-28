@@ -83,7 +83,7 @@ void CharacterTableScreen::RebuildDetailPanel()
 	CharacterDescriptionText.SetFont(SMT2_FONT);
 	CharacterDescriptionText.setScale({0.75, 0.75});
 
-	CharacterLevelText.setPosition({ InfoTextX, PortraitY + (120.0f * UIScale) });
+	CharacterLevelText.setPosition({ InfoTextX, PortraitY + (140.0f * UIScale) });
 	CharacterLevelText.SetFont(SMT1_FONT);
 	CharacterLevelText.setScale({ 0.75, 0.75 });
 

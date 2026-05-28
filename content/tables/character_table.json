@@ -41,8 +41,8 @@
       },
       {
         "Character_Boss": {
-          "DisplayName": "Boss Fortress",
-          "Description": "Who is this again?",
+          "DisplayName": "John Fortress",
+          "Description": "a mysterious survivor from \nanother world. it's almost like\nhe's in some sort of limbo.",
           "Level": 15,
 		  "BaseHP": 200,
 		  "BaseMP": 85,
